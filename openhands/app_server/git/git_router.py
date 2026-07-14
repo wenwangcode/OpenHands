@@ -246,15 +246,16 @@ async def search_branches(
         repository=repository,
         specified_provider=provider,
         page=page,
-        per_page=limit + 1,
+        per_page=limit,
         query=query or None,
     )
     branches = current_page.branches
 
-    next_page_id = None
-    if len(branches) > limit:
-        branches = branches[:-1]
-        next_page_id = encode_page_id(page + 1)
+    # Rely on the provider's has_next_page rather than an over-fetch sentinel.
+    # The sentinel approach (fetch limit + 1) is incompatible with offset-based
+    # pagination: the next page would start one item past the sentinel, silently
+    # dropping a branch at every page boundary (see issue #13883).
+    next_page_id = encode_page_id(page + 1) if current_page.has_next_page else None
 
     return BranchPage(items=branches, next_page_id=next_page_id)
 

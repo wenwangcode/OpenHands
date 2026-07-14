@@ -80,7 +80,7 @@ class GitLabBranchesMixin(GitLabMixinBase):
 
         has_next_page = False
         total_count = None
-        if headers.get('Link', ''):
+        if 'rel="next"' in headers.get('Link', ''):
             has_next_page = True
 
         if 'X-Total' in headers:

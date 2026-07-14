@@ -714,11 +714,10 @@ class TestSearchBranches:
                 branches=[
                     Branch(name='main', commit_sha='abc123', protected=False),
                     Branch(name='develop', commit_sha='def456', protected=False),
-                    Branch(name='feature-branch', commit_sha='ghi789', protected=False),
                 ],
                 has_next_page=True,
                 current_page=1,
-                per_page=3,
+                per_page=2,
             )
         )
         mock_handler_cls.return_value = mock_handler
@@ -740,7 +739,8 @@ class TestSearchBranches:
             user_context=mock_context,
         )
 
-        # Assert
+        # Assert: branches are returned verbatim (no over-fetch sentinel), and
+        # next_page_id is driven by the provider's has_next_page flag.
         assert len(result.items) == 2
         assert result.items[0].name == 'main'
         assert result.items[1].name == 'develop'
@@ -757,7 +757,7 @@ class TestSearchBranches:
                 branches=[],
                 has_next_page=False,
                 current_page=1,
-                per_page=11,
+                per_page=10,
             )
         )
         mock_handler_cls.return_value = mock_handler
@@ -770,7 +770,7 @@ class TestSearchBranches:
         )
 
         # Act
-        await search_branches(
+        result = await search_branches(
             provider=ProviderType.GITHUB,
             repository='user/repo',
             query='feature',
@@ -786,7 +786,11 @@ class TestSearchBranches:
         assert call_kwargs.get('repository') == 'user/repo'
         assert call_kwargs.get('query') == 'feature'
         assert call_kwargs.get('page') == 1
-        assert call_kwargs.get('per_page') == 11  # limit + 1
+        # per_page equals the requested limit: pagination is driven by the
+        # provider's has_next_page flag, not an over-fetch sentinel.
+        assert call_kwargs.get('per_page') == 10
+        # Last page (has_next_page=False) yields no next_page_id.
+        assert result.next_page_id is None
 
     @pytest.mark.asyncio
     @patch('openhands.app_server.git.git_router.ProviderHandler')
@@ -799,11 +803,10 @@ class TestSearchBranches:
                 branches=[
                     Branch(name='feature-3', commit_sha='c3', protected=False),
                     Branch(name='feature-4', commit_sha='c4', protected=False),
-                    Branch(name='feature-5', commit_sha='c5', protected=False),
                 ],
                 has_next_page=True,
                 current_page=2,
-                per_page=3,
+                per_page=2,
             )
         )
         mock_handler_cls.return_value = mock_handler
