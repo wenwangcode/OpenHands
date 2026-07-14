@@ -49,23 +49,13 @@ class GitLabBranchesMixin(GitLabMixinBase):
         return all_branches
 
     async def get_paginated_branches(
-        self,
-        repository: str,
-        page: int = 1,
-        per_page: int = 30,
-        query: str | None = None,
+        self, repository: str, page: int = 1, per_page: int = 30
     ) -> PaginatedBranchesResponse:
-        """Get branches for a repository with pagination.
-
-        When ``query`` is provided, GitLab's ``search`` parameter filters
-        branches by name while preserving pagination.
-        """
+        """Get branches for a repository with pagination"""
         encoded_name = repository.replace('/', '%2F')
         url = f'{self.BASE_URL}/projects/{encoded_name}/repository/branches'
 
         params = {'per_page': str(per_page), 'page': str(page)}
-        if query:
-            params['search'] = query
         response, headers = await self._make_request(url, params)
 
         branches: list[Branch] = []
@@ -96,3 +86,25 @@ class GitLabBranchesMixin(GitLabMixinBase):
             per_page=per_page,
             total_count=total_count,
         )
+
+    async def search_branches(
+        self, repository: str, query: str, per_page: int = 30
+    ) -> list[Branch]:
+        """Search branches using GitLab API which supports `search` param."""
+        encoded_name = repository.replace('/', '%2F')
+        url = f'{self.BASE_URL}/projects/{encoded_name}/repository/branches'
+
+        params = {'per_page': str(per_page), 'search': query}
+        response, _ = await self._make_request(url, params)
+
+        branches: list[Branch] = []
+        for branch_data in response:
+            branches.append(
+                Branch(
+                    name=branch_data.get('name'),
+                    commit_sha=branch_data.get('commit', {}).get('id', ''),
+                    protected=branch_data.get('protected', False),
+                    last_push_date=branch_data.get('commit', {}).get('committed_date'),
+                )
+            )
+        return branches

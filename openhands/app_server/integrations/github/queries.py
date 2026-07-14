@@ -137,10 +137,6 @@ search_branches_graphql_query = """
                 first: $perPage,
                 orderBy: { field: ALPHABETICAL, direction: ASC }
             ) {
-                totalCount
-                pageInfo {
-                    hasNextPage
-                }
                 nodes {
                     name
                     target {

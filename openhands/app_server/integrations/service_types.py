@@ -299,18 +299,14 @@ class GitService(Protocol):
         """Get branches for a repository"""
 
     async def get_paginated_branches(
-        self,
-        repository: str,
-        page: int = 1,
-        per_page: int = 30,
-        query: str | None = None,
+        self, repository: str, page: int = 1, per_page: int = 30
     ) -> PaginatedBranchesResponse:
-        """Get branches for a repository with pagination.
+        """Get branches for a repository with pagination"""
 
-        When ``query`` is provided, results are filtered to branches whose name
-        matches the query, while preserving the same pagination contract used
-        for plain branch listing.
-        """
+    async def search_branches(
+        self, repository: str, query: str, per_page: int = 30
+    ) -> list[Branch]:
+        """Search for branches within a repository"""
 
     async def get_pr_details(self, repository: str, pr_number: int) -> dict:
         """Get detailed information about a specific pull request/merge request
